@@ -159,9 +159,10 @@ reg[3:0]   fsm_state;
 //==========================================================================
 // This state machine issues AXI write-bursts
 //==========================================================================
-reg[7:0] cycle_count;
+reg[ 7:0] cycle_count;
+reg[31:0] burst_count;
 
-assign M_AXI_WDATA = cycle_count;
+assign M_AXI_WDATA = (burst_count << 8) | cycle_count;
 assign M_AXI_WLAST = (cycle_count == burst_cycles) & M_AXI_WVALID;
 assign M_AXI_WSTRB = (M_AXI_WLAST & partial_cycle) ? (1 << extra_bytes)-1 : -1;
 
@@ -180,7 +181,7 @@ always @(posedge clk) begin
                 M_AXI_AWADDR  <= 64'h0123_4567_89AB_CDEF;
                 M_AXI_AWLEN   <= burst_cycles - 1;
                 M_AXI_AWVALID <= 1;
-
+                burst_count   <= 10;
                 cycle_count   <= 1;
                 M_AXI_WVALID  <= 1;
                 fsm_state     <= fsm_state + 1;
@@ -188,8 +189,15 @@ always @(posedge clk) begin
 
         1:  if (M_AXI_WVALID & M_AXI_WREADY) begin
                 if (M_AXI_WLAST) begin
-                    fsm_state    <= 0;
-                    M_AXI_WVALID <= 0;
+                    if (burst_count == 1) begin
+                        fsm_state    <= 0;
+                        M_AXI_WVALID <= 0;
+                    end else begin
+                        M_AXI_AWADDR  <= M_AXI_AWADDR + 16;
+                        M_AXI_AWVALID <= 1;
+                        cycle_count   <= 1;
+                        burst_count   <= burst_count - 1;
+                    end
                 end else
                     cycle_count <= cycle_count + 1;
             end

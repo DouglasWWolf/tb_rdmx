@@ -1,15 +1,16 @@
-module aximm_to_rdmx # 
+module rdmx_xmit_fe # 
 (
     // This width of the incoming and outgoing data bus in bits
     parameter DATA_WBITS = 512,
 
     // Width of an AXI address in bits
     parameter ADDR_WBITS = 64
+
 ) 
 (
     input clk, resetn,
     
-   //=================  This is the main AXI4-slave interface  ================
+    //=================  This is the main AXI4-slave interface  ================
     
     // "Specify write address"              -- Master --    -- Slave --
     input[ADDR_WBITS-1:0]                   S_AXI_AWADDR,
